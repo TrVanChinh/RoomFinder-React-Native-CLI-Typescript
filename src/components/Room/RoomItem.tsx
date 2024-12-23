@@ -1,35 +1,64 @@
-import { Image, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import colors from '../../constants/colors'
 import { Icon } from '@rneui/themed'
+import { RoomInfo } from '../../type/room.interface'
 
-const RoomItem = () => {
-  return (
-    <View style={styles.container}>
-        <Image
-            source={require("../../assets/image/Room.jpg")}
-            style={styles.image}
-        />
+interface RoomItemProps {
+    item: RoomInfo
+    onPress: () => void;
+}
 
-      <View style={styles.container_Info}>
-        <Text style={styles.title} numberOfLines={2}>Title RoomItem hshs hchia hdhak cjdhdj haha dkdk</Text>
-        <View style={styles.roomInfo}>
-            <Icon name='location-on' size={16} color={colors.gray_text}/>
-            <Text style={styles.text_info} numberOfLines={1} ellipsizeMode="tail">Địa chỉ của phòng trọ là ở Quận Ngũ Hành Sơn, thành phố Đà Nẵng</Text>
-        </View> 
-        <View style={styles.roomInfo}>
-            <Icon name='home' size={16} color={colors.gray_text}/>
-            <Text style={styles.text_info}>Đà Nẵng</Text>
-        </View>      
-        <View style={styles.roomInfo}>
-            <Icon name='people' size={16} color={colors.gray_text}/>
-            <Text style={styles.text_info}>4</Text>
-        </View>   
-        <Text style={styles.price}>Từ: 2,200,000 đ/tháng</Text>
+const RoomItem: React.FC<RoomItemProps> = ({ item, onPress }) => {
+    const [image, setImage] = useState<string>("")
 
-      </View>
-    </View>
-  )
+    useEffect(() => {
+        const imageRoom = item.hinhAnh.find(
+            (item) =>
+                item.danhMucHinhAnh === 'Hình ảnh căn phòng' &&
+                item.loaiTep === 'Hình ảnh'
+        )?.duongDan; 
+        if (imageRoom) {
+            setImage(imageRoom); 
+        }
+    }, []) 
+    if (!image) {
+        return (
+          <View>
+          </View>
+        );
+      }
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            style={styles.container}
+        >
+            <Image
+                source={{ uri: image }} 
+                style={styles.image}
+            />
+
+            <View style={styles.container_Info}>
+                <Text style={styles.title} numberOfLines={2}>{item.tieuDe}</Text>
+                <View style={styles.roomInfo}>
+                    <Icon name='location-on' size={16} color={colors.gray_text} />
+                    <Text style={styles.text_info} numberOfLines={1} ellipsizeMode="tail">
+                        {item.diaChi.soNha}, {item.diaChi.phuongXa}, {item.diaChi.quanHuyen}, {item.diaChi.tinhThanh}
+                    </Text>
+                </View>
+                <View style={styles.roomInfo}>
+                    <Icon name='home' size={16} color={colors.gray_text} />
+                    <Text style={styles.text_info}>{item.diaChi.tinhThanh}</Text>
+                </View>
+                <View style={styles.roomInfo}>
+                    <Icon name='people' size={16} color={colors.gray_text} />
+                    <Text style={styles.text_info}>{item.soNguoiToiDa}</Text>
+                </View>
+                <Text style={styles.price}>{item.giaPhong} vnđ/tháng</Text>
+
+            </View>
+        </TouchableOpacity>
+    )
 }
 
 export default RoomItem
@@ -43,12 +72,14 @@ const styles = StyleSheet.create({
         backgroundColor: colors.BackgroundHome,
         borderRadius: 10,
         marginBottom: 10,
-        width: '95%',
-        height: '90%'
+        marginHorizontal:10,
+        // width: '95%',
+        // height: '90%'
     },
     image: {
-        width: "40%",
-        height: "100%",
+        width: 130,
+        height: 130,
+        resizeMode: "cover",
         borderRadius: 5,
         marginBottom: 5,
         marginLeft: 5,
@@ -56,7 +87,7 @@ const styles = StyleSheet.create({
     },
     container_Info: {
         padding: 10,
-        width: "60%",
+        width: 240,
     },
     title: {
         fontSize: 16,

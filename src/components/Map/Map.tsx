@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { View, Alert, Text, StyleSheet, Button, Image, TouchableOpacity } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import MapAPI from '../../core/map/api/MapAPI';
@@ -58,33 +58,6 @@ const Map = () => {
         console.log("Good: ",address_components[0]?.short_name)
         console.log(response.results[0]?.name)
         console.log(address_components[1]?.short_name)
-        // kết quả:
-        // lần 1:
-        // LOG  {"commune": "Hải Châu 2", "district": "Hải Châu", "province": "Đà Nẵng"}
-        // LOG  Trạm Y tế phường Hải Châu 2
-        // LOG  Good:  Trạm Y tế phường Hải Châu 2
-        // LOG  564 Ông Ích Khiêm
-        // so sánh 
-        // nếu 
-
-
-
-        // if(address_components.length == 5) {
-        //     console.log("Số nhà: ",address_components[0]?.short_name, address_components[1]?.short_name)
-        //     console.log("Phường xã: ",address_components[2].short_name)
-        // } else if(address_components.length == 4) {
-
-        // } else if(address_components.length == 4) {
-
-        // }
-        // if(address_components.length < 4) {
-        //     Alert.alert('Thông tin vị trí',`Số nhà: ${address_components[0].short_name}\nQuận Huyên: ${address_components[2].short_name}\nThành phố: ${address_components[3].short_name}`);
-        // } else {
-        //     Alert.alert('Thông tin vị trí',`Số nhà: ${address_components[0].short_name}\nPhường xã: ${address_components[2].short_name}\nQuận Huyên: ${address_components[3].short_name}\nThành phố: ${address_components[4].short_name}`);
-
-        // }
-        // console.log(response.results[0]?.address_components[0].short_name)
-        // console.log(response.results[0]?.address_components)
 
     } catch (error) {
         Alert.alert('Lỗi', 'Không thể lấy địa chỉ từ API Goong');
@@ -109,7 +82,7 @@ const Map = () => {
       <MapboxGL.MapView
         styleURL={loadMap}
         style={{ flex: 1 }}
-        projection="globe" //Phép chiếu được sử dụng khi hiển thị bản đồ
+        projection="globe"
         zoomEnabled={true}
         onPress={handleMapPress}
         ref={mapRef}
@@ -139,6 +112,6 @@ const Map = () => {
   )
 }
 
-export default Map
+export default memo(Map);
 
 const styles = StyleSheet.create({})

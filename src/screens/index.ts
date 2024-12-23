@@ -13,6 +13,14 @@ import UserInfoScreen from './UserInfoScreen';
 import AddressScreen from './AddressScreen';
 import CreateRoomScreen from './roomOwner/createRoom/CreateRoomScreen';
 import AddMediaScreen from './roomOwner/createRoom/AddMediaScreen';
+import AddressRoomScreen from './roomOwner/createRoom/AddressRoomScreen';
+import ListRoomScreen from './roomOwner/createRoom/ListRoomScreen';
+import UpdateRoomScreen from './roomOwner/updateRoom/UpdateRoomScreen';
+import DetailScreen from './DetailScreen';
+import GeneralInforScreen from './roomOwner/updateRoom/GeneralInforScreen';
+import MediaScreen from './roomOwner/updateRoom/MediaScreen';
+import DepositFeeScreen from './roomOwner/updateRoom/DepositFeeScreen';
+import UpdatePasswordScreen from './UpdatePasswordScreen';
 export{ HomeScreen, 
         ProfileScreen, 
         NotificationScreen, 
@@ -28,5 +36,13 @@ export{ HomeScreen,
         AddressScreen,
         CreateRoomScreen,
         AddMediaScreen,
+        AddressRoomScreen,
+        ListRoomScreen,
+        DetailScreen,
+        UpdateRoomScreen,
+        GeneralInforScreen,
+        MediaScreen,
+        DepositFeeScreen,
+        UpdatePasswordScreen,
     } 
     

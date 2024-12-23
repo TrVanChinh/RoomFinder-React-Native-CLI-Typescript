@@ -1,20 +1,15 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-interface Address {
-    street: string;
-    city: string;
-    country: string;
-  }
+import {IAddress } from '../type/address.interface';
   
   interface AddressContextType {
-    address: Address | null;
-    setAddress: React.Dispatch<React.SetStateAction<Address | null>>;
+    address: IAddress | null;
+    setAddress: React.Dispatch<React.SetStateAction<IAddress | null>>;
   }
   
   const AddressContext = createContext<AddressContextType | undefined>(undefined);
   
   export const AddressProvider = ({ children }: { children: ReactNode }) => {
-    const [address, setAddress] = useState<Address | null>(null);
+    const [address, setAddress] = useState<IAddress | null>(null);
   
     return (
       <AddressContext.Provider value={{ address, setAddress }}>

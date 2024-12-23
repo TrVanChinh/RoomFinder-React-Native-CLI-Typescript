@@ -19,7 +19,7 @@ const Title: React.FC<TitleProps> = ({ title }) => {
                 <View style={styles.distance} />
 
                 <View
-                    style={title === 'Bước 1:Thông tin phòng' || title === 'Bước 2:Hình ảnh và video' ? styles.dash_none : styles.dash}
+                    style={title === 'Bước 1:Thông tin phòng' || title === 'Bước 2:Thông tin chi phí' ? styles.dash_none : styles.dash}
                 />
             </View>
         </View>

@@ -1,13 +1,21 @@
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, ImageBackground} from 'react-native'
+import React, { useEffect, useState } from 'react'
 import { RootStackParamList } from "../../../navigation/RootStackParamList";
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import colors from '../../../constants/colors';
 import { Dropdown } from 'react-native-element-dropdown';
 import { launchCamera, launchImageLibrary, MediaType } from 'react-native-image-picker';
 import { Icon } from '@rneui/themed';
-
+import { useAddress } from '../../../context/AddressContext';
+import { CheckBox } from '@rneui/themed';
 import Title from '../../../components/Room/Title';
+import Checkbox from '../../../components/Checkbox';
+import DropdownComponent from '../../../components/DropBox';
+import axiosInstance from "../../../service/axiosInstance";
+import axios from "axios";
+import { roomService, mediaService, addressService } from "../../../service"
+import { IRoom } from '../../../type/room.interface';
+import { useUser } from '../../../context/UserContext';
 
 type CreateRoomScreenProps = NativeStackScreenProps<RootStackParamList, 'CreateRoom'>;
 interface DropDownItem {
@@ -17,6 +25,7 @@ interface DropDownItem {
 
 interface listItem {
   label: string;
+  column: string;
   value: boolean;
 }
 
@@ -25,29 +34,62 @@ interface ImageOptions {
   selectionLimit: number;
 }
 
+interface deposit {
+  phiDatCoc: number;
+  thoiHanDatCoc: number;
+  donViTienTe: string;
+  donViThoiGian: string;
+}
+
 const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
-  const [roomType, setRoomType] = useState<string>("");
+  const { address, setAddress } = useAddress();
+  const {user, setUser} = useUser()
   const [isFocus, setIsFocus] = useState(false);
+
+  useEffect(() => {
+    setAddress(null)
+  },[])
+  
+  const [title, setTitle] = useState<string>("");
+  const [describe, setDescribe] = useState<string>("");
+  const [roomType, setRoomType] = useState<string>("");
   const [roomWithOwner, setRoomWithOwner] = useState<string>("");
-  // const [interior, setInterior] = useState<string[]>([]);
-  const [interior, setInterior] = useState<listItem[]>([
-    {label:'Bàn ghế', value: false},
-    { label: 'Bàn ghế', value: false },
-    { label: 'Tủ lạnh', value: false },
-    { label: 'Giường', value: false },
-    { label: 'Bếp', value: false },
-    { label: 'Tủ quần áo', value: false },
-    { label: 'Máy giặt', value: false },
-    { label: 'Điều hòa', value: false },
-    { label: 'Máy nóng lạnh', value: false },
-    ]);
-
-  const [interiorStatus, setInteriorStatus] = useState<string>("");
-
+  const [area, setArea] = useState<string>("");
+  const [gacXep, setGacXep] = useState(false);
+  const [kitchen, setkitchen] = useState(false);
   const [numberOfBedrooms, setNumberOfBedrooms] = useState(0)
   const [numberOfFloors, setNumberOfFloors] = useState(0)
   const [numberOfBathrooms, setNumberOfBathrooms] = useState(0)
   const [numberOfPeople, setNumberOfPeople] = useState(0)
+
+
+  const [roomPrice, setRoomPrice] = useState(0)
+  const [electricityPrice, setElectricityPrice] = useState(0)
+  const [waterPrice, setWaterPrice] = useState(0)
+  const [depositList, setDepositList] = useState<deposit[]>([]);
+
+
+  const [video, setVideo] = useState<string[]>([])
+  const [roomImages, setRoomImages] = useState<string[]>([]);
+  const [hinhAnhQuyenSuDungDat, setHinhAnhQuyenSuDungDat] = useState<string[]>([]);
+  const [hinhAnhGiayPhepKinhDoanh, setHinhAnhGiayPhepKinhDoanh] = useState<string[]>([]);
+  const [hinhAnhGiayPhongChay, setHinhAnhGiayPhongChay] = useState<string[]>([]);
+
+
+  const [interior, setInterior] = useState<listItem[]>([
+    { label: 'Bàn ghế', column: "banGhe", value: false },
+    { label: 'Sofa', column: "sofa", value: false },
+    { label: 'wifi', column: "wifi", value: false },
+    { label: 'Tủ lạnh', column: "tuLanh", value: false },
+    { label: 'Giường', column: "giuong", value: false },
+    { label: 'chăn ga gối', column: "chanGaGoi", value: false },
+    { label: 'Tủ quần áo', column: "tuQuanAo", value: false },
+    { label: 'Đồ dùng nhà bếp', column: "doDungBep", value: false },
+    { label: 'Điều hòa', column: "dieuHoa", value: false },
+    { label: 'Máy nóng lạnh', column: "nongLanh", value: false },
+  ]);
+
+  const [interiorStatus, setInteriorStatus] = useState<string>("false");
 
   const roomTypeData: DropDownItem[] = [
     { label: "Nhà ở", value: "1" },
@@ -65,43 +107,91 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
     { label: "Không", value: "false" },
   ];
 
-  const [roomImages, setRoomImages] = useState<String[]>([]);
+  const timeData: DropDownItem[] = [
+    { label: 'ngày', value: 'ngày' },
+    { label: 'tuần', value: 'tuần' },
+    { label: 'tháng', value: 'tháng' },
+  ];
+  const [time, setTime] = useState(0);
+  const [deposit, setDeposit] = useState(0);
+  const [index, setIndex] = useState(-1);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [isAdd, setAdd] = useState(false);
+  const [timeType, setTimeType] = useState<string>("");
+
   // const [roomImages, setRoomImages] = useState([]);
-
-  const [video, setVideo] = useState<String[]>([])
   const [menu, setMenu] = useState('Bước 1:Thông tin phòng');
-  const [hinhAnhQuyenSuDungDat, setHinhAnhQuyenSuDungDat] = useState<String[]>([]);
-  const [hinhAnhGiayPhepKinhDoanh, setHinhAnhGiayPhepKinhDoanh] = useState<String[]>([]);
-  const [hinhAnhGiayPhongChay, setHinhAnhGiayPhongChay] = useState<String[]>([]);
 
-
-  const handleSelectRoomImages = async () => {
-    const options: ImageOptions = {
-      mediaType: 'photo',
-      selectionLimit: 10,
-    };
-
-    const result = await launchImageLibrary(options);
-
-    if (result.didCancel) {
-      console.log('User cancelled image picker');
-    } else if (result.errorCode) {
-      console.error('ImagePicker Error: ', result.errorMessage);
-    } else if (result.assets) {
-      // Extract URIs of selected images
-      const selectedImages = result.assets.map((asset) => asset.uri || '');
-      setRoomImages((prevImages) => {
-        if (prevImages.length + selectedImages.length > 10) {
-          Alert.alert('Tối đa 10 ảnh!');
-          return prevImages;
-        }
-        return [...prevImages, ...selectedImages];
-      });
-    }
+  const toggleModal = () => {
+    setIndex(-1);
+    setDeposit(0);
+    setTime(0);
+    setModalVisible(!isModalVisible);
   };
 
+  const closeModal = () => {
+    setDeposit(0);
+    setTime(0);
+    setAdd(false);
+    toggleModal();
+  };
+
+  const newDeposit = (time: number, deposit: number, timeType: string) => {
+    setDepositList((prevList) => [
+      ...prevList,
+      { phiDatCoc: deposit, thoiHanDatCoc: time, donViTienTe: "VND", donViThoiGian: timeType },
+    ]);
+  };
+
+  const updateDeposit = (index: number, time: number, deposit: number, timeType: string) => {
+    setDepositList((prevList) =>
+      prevList.map((item, i) =>
+        i === index
+          ? { ...item, phiDatCoc: deposit, thoiHanDatCoc: time, donViTienTe: "VND", donViThoiGian: timeType }
+          : item
+      )
+    );
+  };
+
+  const deleteDeposit = (index: number) => {
+    setDepositList((prevList) => prevList.filter((_, i) => i !== index));
+  };
+
+  const handleCheckboxGacXep = (value: boolean) => {
+    setGacXep(value);
+  };
+
+  const handleCheckboxKitChen = (value: boolean) => {
+    setkitchen(value);
+  };
+
+  // const handleSelectRoomImages = async () => {
+  //   const options: ImageOptions = {
+  //     mediaType: 'photo',
+  //     selectionLimit: 10,
+  //   };
+
+  //   const result = await launchImageLibrary(options);
+
+  //   if (result.didCancel) {
+  //     console.log('User cancelled image picker');
+  //   } else if (result.errorCode) {
+  //     console.error('ImagePicker Error: ', result.errorMessage);
+  //   } else if (result.assets) {
+  //     // Extract URIs of selected images
+  //     const selectedImages = result.assets.map((asset) => asset.uri || '');
+  //     setRoomImages((prevImages) => {
+  //       if (prevImages.length + selectedImages.length > 10) {
+  //         Alert.alert('Tối đa 10 ảnh!');
+  //         return prevImages;
+  //       }
+  //       return [...prevImages, ...selectedImages];
+  //     });
+  //   }
+  // };
+
   const handleSelectImage = async (
-    setImage: React.Dispatch<React.SetStateAction<String[]>>,
+    setImage: React.Dispatch<React.SetStateAction<string[]>>,
     mediaType: MediaType
   ) => {
     Alert.alert(
@@ -165,7 +255,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
   };
 
   const changeImageItem = async (
-    setImages: React.Dispatch<React.SetStateAction<String[]>>,
+    setImages: React.Dispatch<React.SetStateAction<string[]>>,
     mediaType: MediaType,
     imageUri: string
   ) => {
@@ -197,7 +287,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
   };
 
   const deleteImageItem = async (
-    setImages: React.Dispatch<React.SetStateAction<String[]>>,
+    setImages: React.Dispatch<React.SetStateAction<string[]>>,
     imageUri: string
   ) => {
     setImages((prevImages) => {
@@ -215,7 +305,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
   const handleSelectItem = (selectedIndex: number) => {
     setInterior((prevItems) => {
       const updatedItems = [...prevItems];
-        if (selectedIndex >= 0 && selectedIndex < updatedItems.length) {
+      if (selectedIndex >= 0 && selectedIndex < updatedItems.length) {
         updatedItems[selectedIndex] = {
           ...updatedItems[selectedIndex],
           value: !updatedItems[selectedIndex].value,
@@ -223,12 +313,109 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
       } else {
         console.warn('Index không hợp lệ');
       }
-  
+
       return updatedItems;
     });
   };
-  
 
+  const UploadMedia = async(maPhong: number) => {
+    if (!roomImages || roomImages.length < 1) {
+      Alert.alert("Thông báo", "Chưa có ảnh phòng.");
+
+    } else if (!hinhAnhGiayPhepKinhDoanh || hinhAnhGiayPhepKinhDoanh.length < 1) {
+      Alert.alert("Thông báo", "Chưa có hình ảnh giấy phép kinh doanh.");
+
+    } else if (!hinhAnhGiayPhongChay || hinhAnhGiayPhongChay.length < 1) {
+      Alert.alert("Thông báo", "Chưa có hình giấy phép phòng cháy.");
+
+    } else if (!hinhAnhQuyenSuDungDat || hinhAnhQuyenSuDungDat.length < 1) {
+      Alert.alert("Thông báo", "Chưa có hình ảnh giấy phép quyền sử dụng đất.");
+
+    } else {
+      const roomInmageUri = await mediaService.uploadRoomImage(roomImages)
+      const GiayPhepKinhDoanhUri = await mediaService.uploadRoomImage(hinhAnhGiayPhepKinhDoanh)
+      const GiayPhepPhongChayUri = await mediaService.uploadRoomImage(hinhAnhGiayPhongChay)
+      const GiayPhepQuyenSuDungDatUri = await mediaService.uploadRoomImage(hinhAnhQuyenSuDungDat)
+      
+      await mediaService.addMedia(maPhong , 1 ,"Hình ảnh", roomInmageUri.data)
+      await mediaService.addMedia(maPhong , 2 ,"Hình ảnh", GiayPhepQuyenSuDungDatUri.data)
+      await mediaService.addMedia(maPhong , 3 ,"Hình ảnh", GiayPhepPhongChayUri.data)
+      await mediaService.addMedia(maPhong , 4 ,"Hình ảnh", GiayPhepKinhDoanhUri.data)
+
+      if (video) {
+        const videoUri = await mediaService.uploadRoomVideo(video)
+        await mediaService.addMedia(maPhong , 1 ,"Video", videoUri.data)
+      }
+
+    }
+  }
+
+  const createDeposit = async (maPhong: number) => {
+    if (!depositList || depositList.length === 0) {
+      Alert.alert("Thông báo lỗi", "Chưa có thông tin đặt cọc phòng.");
+    } else {
+      try {
+        await roomService.handleCreateDeposit(depositList, maPhong)
+      } catch (error) {
+        Alert.alert("Thông báo lỗi", "Lỗi khởi tạo phí đặt cọc.");
+        console.log(error)
+      }
+    }
+  }
+
+  const createRoom = async() => {
+    if (!address) {
+      Alert.alert("Thông báo lỗi", "Chưa có thông tin địa chỉ phòng.");
+    } else if (!depositList || depositList.length === 0) {
+      Alert.alert("Thông báo lỗi", "Chưa có thông tin đặt cọc phòng.");
+    }
+    else {
+      const maDiaChi = await  addressService.handleCreateRoomAddress(address)
+      const maNoiThat = await roomService.handleCreateInterior(interior)
+      // console.log( maDiaChi)
+      // console.log( maNoiThat)
+      if( user) {
+        const roomData: IRoom = {
+          maPhong: null,
+          maNguoiDung: user.maNguoiDung,
+          maLoaiPhong: Number(roomType),
+          maDiaChi: maDiaChi,
+          maNoiThat: maNoiThat,
+          tieuDe: title,
+          moTa: describe,
+          dienTich: area + "m2",
+          phongChungChu: roomWithOwner === "true",
+          soLuongPhongNgu: numberOfBedrooms,
+          soTang: numberOfFloors,
+          soNguoiToiDa: numberOfPeople,
+          trangThaiPhong: "Chờ duyệt",
+          gacXep: gacXep,
+          nhaBep: kitchen,
+          giaPhong: roomPrice,
+          giaDien: electricityPrice,
+          giaNuoc: waterPrice,
+        }
+        try {
+          const room = await roomService.createRoom(roomData)
+          await Promise.all([
+            UploadMedia(room.maPhong),
+            createDeposit(room.maPhong),
+          ]);
+  
+          Alert.alert("Thông báo", "Tạo phòng thành công.",[
+            {
+              text: "OK",
+              onPress: () => navigation.navigate('Main')
+            }
+          ]);
+        } catch (error) {
+          Alert.alert("Thông báo lỗi", "Tạo phòng thất bại.");
+          console.log(error);
+        }
+      }
+    }
+
+  }
   return (
     <ScrollView style={styles.container}>
       <Title title={menu} />
@@ -236,32 +423,30 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
         <View style={styles.component}>
           <View>
             <Text style={styles.input_title}>Tiêu đề:</Text>
-            <TouchableOpacity style={styles.input_container}
-              onPress={() => navigation.navigate("Address")}
+            <View style={styles.input_container}
             >
               <TextInput
                 style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
+                onChangeText={setTitle}
+                value={title}
               />
-            </TouchableOpacity>
+            </View>
           </View>
 
           <View style={{ marginTop: 10 }}>
             <Text style={styles.input_title}>Mô tả:</Text>
-            <TouchableOpacity style={styles.input_container}
-              onPress={() => navigation.navigate("Address")}
+            <View style={styles.input_container}
             >
               <TextInput
                 style={styles.textArea}
-                // value={text}
-                // onChangeText={(value) => setText(value)}
+                value={describe}
+                onChangeText={(value) => setDescribe(value)}
                 placeholder="Nhập nội dung tại đây..."
-                multiline={true} // Cho phép nhập nhiều dòng
-                numberOfLines={4} // Gợi ý số dòng hiển thị
-                textAlignVertical="top" // Canh chỉnh văn bản ở đầu
+                multiline={true}
+                numberOfLines={4}
+                textAlignVertical="top"
               />
-            </TouchableOpacity>
+            </View>
           </View>
           <View style={{ marginTop: 10 }}>
             <Text style={styles.input_title}>Loại phòng:</Text>
@@ -302,7 +487,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
                 valueField="value"
                 value={roomWithOwner}
                 onChange={(item) => {
-                  setRoomWithOwner(item.value);;
+                  setRoomWithOwner(item.value);
                 }}
               />
             </View>
@@ -310,16 +495,21 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
 
           <View style={{ marginTop: 10 }}>
             <Text style={styles.input_title}>Địa chỉ:</Text>
-            <TouchableOpacity style={styles.input_container}
-              onPress={() => navigation.navigate("Address")}
+            <TouchableOpacity style={[styles.input_container]}
+              onPress={() => navigation.navigate("AddressRoom",{ fromScreen: 'CreateRoomScreen'})}
             >
-              <TextInput
-                style={styles.input}
-                //   onChangeText={setName}
-                //   value={name}
-                editable={false} // Không cho phép chỉnh sửa
-                selectTextOnFocus={false} // Ngăn chọn văn bản
-              />
+              {address ? (<Text
+                style={[styles.input, { color: "black", }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              > {address?.soNha}, {address?.phuongXa}, {address?.quanHuyen}, {address?.tinhThanh}
+              </Text>) : (<Text
+                style={[styles.input, { color: "black", }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+              </Text>)}
+
               <Image source={require('../../../assets/icon/angle-right.png')} style={styles.icon} />
             </TouchableOpacity>
           </View>
@@ -329,8 +519,8 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
             <View style={styles.input_container}>
               <TextInput
                 style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
+                onChangeText={setArea}
+                value={area}
               />
               <Text style={styles.unit}>m2</Text>
 
@@ -338,40 +528,17 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={{ marginTop: 10 }}>
-            <Text style={styles.input_title}>Giá thuê phòng:</Text>
-            <View style={styles.input_container}>
-              <TextInput
-                style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
-              />
-              <Text style={styles.unit}>vnđ</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={[styles.input_title, { marginRight: 100 }]}>Gác xếp:</Text>
+              <Checkbox onCheckbox1Change={handleCheckboxGacXep} />
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={[styles.input_title, { marginRight: 100 }]}>Nhà bếp:</Text>
+              <Checkbox onCheckbox1Change={handleCheckboxKitChen} />
             </View>
           </View>
 
-          <View style={{ marginTop: 10 }}>
-            <Text style={styles.input_title}>Giá điện:</Text>
-            <View style={styles.input_container}>
-              <TextInput
-                style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
-              />
-              <Text style={styles.unit}>đ/kwh</Text>
-            </View>
-          </View>
-
-          <View style={{ marginTop: 10 }}>
-            <Text style={styles.input_title}>Giá nước:</Text>
-            <View style={styles.input_container}>
-              <TextInput
-                style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
-              />
-              <Text style={styles.unit}>khối</Text>
-            </View>
-          </View>
           <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
             <Text style={styles.input_title}>số phòng ngủ:</Text>
             <View style={{ flexDirection: 'row' }}>
@@ -426,7 +593,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
+          {/* <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
             <Text style={styles.input_title}>số phòng tắm, vệ sinh:</Text>
             <View style={{ flexDirection: 'row' }}>
               {numberOfBathrooms > 0 ? (
@@ -478,7 +645,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
                 <Image source={require('../../../assets/icon/plus_white.png')} style={styles.icon} />
               </Pressable>
             </View>
-          </View>
+          </View> */}
 
           <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
             <Text style={styles.input_title}>số tầng:</Text>
@@ -603,48 +770,205 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
                 valueField="value"
                 value={interiorStatus}
                 onChange={(item) => {
-                  setInteriorStatus(item.value);;
+                  setInteriorStatus(item.value);
                 }}
               />
             </View>
 
-              {interiorStatus === "false" ? (
-                // <View style={{ flexDirection:'row', flexWrap:'wrap'}}>
-                //   {interior.map((item, index) => (
-                //     <View key={index}> 
-                //     <TouchableOpacity key={index} style={{ padding:5, borderColor:colors.gray_text, borderWidth:1, borderRadius:15, }}>
-                //       <Text>{item}</Text>
-                //     </TouchableOpacity>
-                //     </View>
-                //   ))}
-                // </View>
-                <View></View>
-                  
-              ):(
-                <View style={{ flexDirection:'row', flexWrap:'wrap'}}>
-                  {interior.map((item, index) => (
-                    <View key={index} style={{margin:5}}> 
-                    <TouchableOpacity key={index} style={{ padding:5, borderColor: item.value ? 'green' : colors.gray_text, borderWidth:1, borderRadius:15, }}
+            {interiorStatus === "false" ? (
+              <View></View>
+            ) : (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {interior.map((item, index) => (
+                  <View key={index} style={{ margin: 5 }}>
+                    <TouchableOpacity key={index} style={{ padding: 10, backgroundColor: item.value ? colors.pink_background : colors.gray, borderRadius: 15, }}
                       onPress={() => handleSelectItem(index)}
-                  >
-                      <Text style={{fontSize:16, color: item.value ? 'green' : colors.gray_text}}>{item.label}</Text>
+                    >
+                      <Text style={{ fontSize: 16, color: item.value ? colors.red_text : 'black' }}>{item.label}</Text>
                     </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-            
+                  </View>
+                ))}
+              </View>
+            )}
+
           </View>
           <View style={{ marginTop: 10, alignItems: 'center' }}>
             <TouchableOpacity style={styles.btn_confirm}
-              onPress={() => setMenu('Bước 2:Hình ảnh và video')}
+              onPress={() => setMenu('Bước 2:Thông tin chi phí')}
             >
               <Text style={styles.btn_text}>Tiếp theo</Text>
             </TouchableOpacity>
           </View>
         </View>
-      ) : menu === 'Bước 2:Hình ảnh và video' ? (
+      ) : menu === 'Bước 2:Thông tin chi phí' ? (
+        <View style={styles.component}>
+          <View style={{ marginTop: 10 }}>
+            <Text style={styles.input_title}>Giá thuê phòng:</Text>
+            <View style={styles.input_container}>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => setRoomPrice(Number(text) || 0)}
+                value={roomPrice.toString()}
+                keyboardType="numeric"
+              />
+              <Text style={styles.unit}>vnđ</Text>
+            </View>
+          </View>
 
+          <View style={{ marginTop: 10 }}>
+            <Text style={styles.input_title}>Giá điện:</Text>
+            <View style={styles.input_container}>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => setElectricityPrice(Number(text) || 0)}
+                value={electricityPrice.toString()}
+                keyboardType="numeric"
+              />
+              <Text style={styles.unit}>đ/kwh</Text>
+            </View>
+          </View>
+
+          <View style={{ marginTop: 10 }}>
+            <Text style={styles.input_title}>Giá nước:</Text>
+            <View style={styles.input_container}>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => setWaterPrice(Number(text) || 0)}
+                value={waterPrice.toString()}
+                keyboardType="numeric"
+              />
+              <Text style={styles.unit}>khối</Text>
+            </View>
+          </View>
+
+          {/* modal */}
+          <Modal
+            visible={isModalVisible}
+            animationType="fade"
+            transparent={true}
+            onRequestClose={toggleModal}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                  <Icon name='close' size={20} color="black" />
+                </TouchableOpacity>
+
+                <Text style={[styles.input_title, { alignSelf: 'center' }]}>Phí đặt cọc:</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Nhập phí đặt cọc"
+                  value={deposit.toString()}
+                  onChangeText={(text) => setDeposit(Number(text) || 0)}
+                  keyboardType="numeric"
+                />
+
+                <Text style={[styles.input_title, { alignSelf: 'center' }]}>Thời gian đặt cọc:</Text>
+                <View style={{ flexDirection: 'row' }}>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Nhập thời gian"
+                    value={time.toString()}
+                    onChangeText={(text) => setTime(Number(text) || 0)}
+                    keyboardType="numeric"
+                  />
+                  <View style={[styles.modalInput]}>
+                    <DropdownComponent
+                      data={timeData}
+                      placeholder="thời gian"
+                      value={timeType}
+                      onChange={(item) => setTimeType(item)}
+                    />
+                  </View>
+
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.btn_confirm, { alignSelf: 'center' }]}
+                  onPress={() => {
+                    if (!deposit || !time) {
+                      Alert.alert("Thông báo", "Không được để trống");
+                    } else {
+                      if (isAdd) {
+                        newDeposit(time, deposit, timeType);
+                        toggleModal();
+                      } else {
+                        updateDeposit(index, time, deposit, timeType);
+                        toggleModal();
+                      }
+                    }
+                  }}
+                >
+                  <Text style={styles.btn_text}>Lưu</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Phí đặt cọc */}
+          <View style={{ marginTop: 10 }}>
+            <Text style={styles.input_title}>Phí đặt cọc:</Text>
+
+            {depositList?.map((item, index) =>
+              <View
+                key={index}
+                style={styles.input_container}
+              >
+                <View style={{ margin: 10 }}>
+                  <Text style={{ color: 'black', fontSize: 16 }}>Phí đặt cọc: {item.phiDatCoc} {item.donViTienTe}</Text>
+                  <Text style={{ color: 'black', fontSize: 16 }}>thời hạn đặt cọc: {item.thoiHanDatCoc} {item.donViThoiGian}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', margin: 10, }}>
+                  <TouchableOpacity
+                    style={styles.btn_icon}
+                    onPress={() => {
+                      setAdd(false);
+                      toggleModal();
+                      setIndex(index);
+                      setTime(item.thoiHanDatCoc);
+                      setDeposit(item.phiDatCoc)
+                    }}
+                  >
+                    <Icon name='edit' size={20} color="gray" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.btn_icon}
+                    onPress={() => {
+                      deleteDeposit(index);
+                    }}
+                  >
+                    <Icon name='delete' size={20} color="gray" />
+
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+            <TouchableOpacity
+              style={[styles.input_container, { padding: 5, justifyContent: 'center', borderColor: 'red' }]}
+              onPress={() => {
+                setAdd(true);
+                toggleModal();
+              }}
+            >
+              <Text style={{ fontSize: 16, color: "red" }}>+ Thêm thông tin đặt cọc</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Nút chuyển trang */}
+          <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
+            <TouchableOpacity style={styles.btn_back}
+              onPress={() => setMenu('Bước 1:Thông tin phòng')}
+            >
+              <Text style={[styles.btn_text, { color: 'black' }]}>Quay lại</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btn_confirm}
+              onPress={() => setMenu('Bước 3:Hình ảnh và video')}
+            >
+              <Text style={styles.btn_text}>Tiếp theo</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
         <View style={styles.component}>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -659,8 +983,7 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
               <View style={{ width: "90%", flexDirection: "row", flexWrap: "wrap" }}>
                 <TouchableOpacity
                   // style={{ backgroundColor: "white" }}
-                  onPress={handleSelectRoomImages}
-                >
+                  onPress={() => handleSelectImage(setRoomImages, 'photo',)}                >
                   <View
                     style={{
                       margin: 3,
@@ -929,10 +1252,6 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
                     <TouchableOpacity
                       onPress={() => changeImageItem(setHinhAnhGiayPhepKinhDoanh, 'photo', String(image))}
                       style={{
-                        // borderColor: selectedImages.includes(index)
-                        //   ? "red"
-                        //   : "lightgray",
-                        // borderWidth: selectedImages.includes(index) ? 1 : 1,
                         margin: 3,
                         padding: 5,
                       }}
@@ -997,10 +1316,6 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
                     <TouchableOpacity
                       onPress={() => changeImageItem(setHinhAnhGiayPhongChay, 'photo', String(image))}
                       style={{
-                        // borderColor: selectedImages.includes(index)
-                        //   ? "red"
-                        //   : "lightgray",
-                        // borderWidth: selectedImages.includes(index) ? 1 : 1,
                         margin: 3,
                         padding: 5,
                       }}
@@ -1027,72 +1342,23 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
             </View>
           </View>
 
+
           <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
             <TouchableOpacity style={styles.btn_back}
-              onPress={() => setMenu('Bước 1:Thông tin phòng')}
+              onPress={() => setMenu('Bước 2:Thông tin chi phí')}
             >
               <Text style={[styles.btn_text, { color: 'black' }]}>Quay lại</Text>
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.btn_confirm}
-              onPress={() => setMenu('Bước 3:Thông tin liên hệ')}
+              onPress={() => createRoom()}
             >
-              <Text style={styles.btn_text}>Tiếp theo</Text>
+              <Text style={styles.btn_text}>Tạo</Text>
             </TouchableOpacity>
           </View>
         </View>
-      ) : (
-        <View style={styles.component}>
-          <View>
-            <Text style={styles.input_title}>Họ và tên:</Text>
-            <View style={styles.input_container}>
-              <TextInput
-                style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
-              />
-            </View>
-          </View>
-
-          <View style={{ marginTop: 10 }}>
-            <Text style={styles.input_title}>Số điện thoại:</Text>
-            <View style={styles.input_container}>
-              <TextInput
-                style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
-              />
-            </View>
-          </View>
-
-          <View style={{ marginTop: 10 }}>
-            <Text style={styles.input_title}>Email:</Text>
-            <View style={styles.input_container}>
-              <TextInput
-                style={styles.input}
-              //   onChangeText={setName}
-              //   value={name}
-              />
-            </View>
-          </View>
-          <View style={{ marginTop: 10, justifyContent: 'space-between', flexDirection: 'row' }}>
-            <TouchableOpacity style={styles.btn_back}
-              onPress={() => setMenu('Bước 2:Hình ảnh và video')}
-            >
-              <Text style={[styles.btn_text, { color: 'black' }]}>Quay lại</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btn_confirm}
-            // onPress={()=> setMenu('Bước 3:Thông tin liên hệ')}
-            >
-              <Text style={styles.btn_text}>Tiếp theo</Text>
-            </TouchableOpacity>
-          </View>
-
-        </View>
-      )}
-      {/*         
-        <TouchableOpacity style={styles.btn_confirm}>
-                  <Text style={styles.btn_text}>Xác nhận</Text>
-        </TouchableOpacity> */}
+      )
+      }
     </ScrollView>
   )
 }
@@ -1100,6 +1366,15 @@ const CreateRoomScreen: React.FC<CreateRoomScreenProps> = ({ navigation }) => {
 export default CreateRoomScreen
 
 const styles = StyleSheet.create({
+  label: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  checkboxContainer: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     padding: 10,
@@ -1158,6 +1433,8 @@ const styles = StyleSheet.create({
   input_title: {
     fontSize: 18,
     color: 'black',
+    fontWeight:'bold'
+
   },
   dropdown: {
     width: '95%',
@@ -1263,5 +1540,37 @@ const styles = StyleSheet.create({
     padding: 2,
     right: 0,
     backgroundColor: '#FFFFFF'
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
+  },
+  closeButton: {
+    marginTop: -15,
+    marginRight: -15,
+    alignSelf: "flex-end",
+  },
+  modalInput: {
+    marginVertical: 12,
+    marginLeft: 5,
+    paddingVertical: 0,
+    padding: 15,
+    height: 40,
+    textAlign: "center",
+    borderWidth: 1,
+    borderColor: "lightgray",
+  },
+  btn_icon: {
+    borderRadius: 15,
+    padding: 5,
+    backgroundColor: colors.gray, margin: 5
   }
 })

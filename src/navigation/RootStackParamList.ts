@@ -1,4 +1,5 @@
 import IRegister from "../type/register.interface";
+import { IRoom, RoomInfo } from "../type/room.interface";
 import IUser from "../type/user.interface";
 
 export type RootStackParamList = {
@@ -16,8 +17,16 @@ export type RootStackParamList = {
     IdCard: IRegister;
     UserInfo: undefined;
     Address: undefined;
+    AddressRoom: {fromScreen: string};
     CreateRoom: undefined;
+    ListRoom: undefined;
+    UpdateRoom: RoomInfo;
     AddMedia: undefined;
+    Detail: { roomInfo: RoomInfo; fromScreen: string };
+    GeneralInfor: undefined;
+    Media: RoomInfo;
+    DepositFee: RoomInfo;
+    UpdatePassword: undefined
     // Detail: { data: any };
   };
 

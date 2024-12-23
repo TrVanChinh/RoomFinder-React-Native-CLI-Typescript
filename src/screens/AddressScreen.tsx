@@ -16,19 +16,26 @@ import React, {
   useLayoutEffect,
   useContext,
   useCallback,
+  memo,
 } from "react";
 import { Dropdown } from "react-native-element-dropdown"
 import axios from "axios";
 import colors from "../constants/colors";
+import { Icon } from '@rneui/themed';
+import { useUser } from "../context/UserContext";
+import { IAddress } from "../type/address.interface";
+import { addressService } from "../service";
+import { RootStackParamList } from "../navigation/RootStackParamList";
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 interface catelogAddress {
-    label: string;
-    value: string;
-  }
-const AddressScreen = () => {
-  // const { user } = useUser();
-  // const userId = user._id
-  // const {address} = route.params
+  label: string;
+  value: string;
+}
+type AddresscreenProps = NativeStackScreenProps<RootStackParamList, 'Address'>;
+const AddressScreen: React.FC<AddresscreenProps> = ({ navigation }) => {
+  const { user } = useUser();
+  const maDiaChi = user?.maDiaChi
   const [street, setStreet] = useState("");
   const [provinces, setProvinces] = useState<catelogAddress[]>([]);
   const [district, setDistrict] = useState<catelogAddress[]>([]);
@@ -44,134 +51,117 @@ const AddressScreen = () => {
 
   const token = "30dee1e2-a7c8-11ee-a59f-a260851ba65c";
 
-    const fetchProvinces = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get('https://online-gateway.ghn.vn/shiip/public-api/master-data/province', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Token': `${token}`, 
-          },
-        });
-        // Chuyển đổi dữ liệu từ API thành mảng có thuộc tính 'label' và 'value'
-        const formattedProvinces: catelogAddress[] = response.data.data.map(
-            (province: any) => ({
-              label: province.ProvinceName,
-              value: province.ProvinceID,
-            })
-          );
-        setProvinces(formattedProvinces);
-      } catch (error) {
-        console.error(error);
-      } finally { 
-        setLoading(false);
-      }
-    };
-  
-    const fetchDistricts = async (provinceId: string) => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`https://online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${provinceId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Token': `${token}`, 
-          },
-        });
-        // Chuyển đổi dữ liệu từ API thành mảng có thuộc tính 'label' và 'value'
-        const formattedDistricts: catelogAddress[] = response.data.data.map(
-            (district: any) => ({
-              label: district.DistrictName,
-              value: district.DistrictID,
-            })
-          );
-        setDistrict(formattedDistricts);
-      } catch (error) {
-        console.error(error);
-      } finally { 
-        setLoading(false);
-      }
-    };
+  const fetchProvinces = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('https://online-gateway.ghn.vn/shiip/public-api/master-data/province', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Token': `${token}`,
+        },
+      });
+      // Chuyển đổi dữ liệu từ API thành mảng có thuộc tính 'label' và 'value'
+      const formattedProvinces: catelogAddress[] = response.data.data.map(
+        (province: any) => ({
+          label: province.ProvinceName,
+          value: province.ProvinceID,
+        })
+      );
+      setProvinces(formattedProvinces);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchWards = async (districtId: string) => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`https://online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${districtId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Token': `${token}`, 
-          },
-        });
-        // Chuyển đổi dữ liệu từ API thành mảng có thuộc tính 'label' và 'value'
-        const formattedWards: catelogAddress[] = response.data.data.map((ward: any) => ({
-            label: ward.WardName,
-            value: ward.WardCode,
-          }));
-          setWard(formattedWards);
-      } catch (error) {
-        console.error(error);
-      } finally { 
-        setLoading(false);
+  const fetchDistricts = async (provinceId: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${provinceId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Token': `${token}`,
+        },
+      });
+      // Chuyển đổi dữ liệu từ API thành mảng có thuộc tính 'label' và 'value'
+      const formattedDistricts: catelogAddress[] = response.data.data.map(
+        (district: any) => ({
+          label: district.DistrictName,
+          value: district.DistrictID,
+        })
+      );
+      setDistrict(formattedDistricts);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWards = async (districtId: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${districtId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Token': `${token}`,
+        },
+      });
+      // Chuyển đổi dữ liệu từ API thành mảng có thuộc tính 'label' và 'value'
+      const formattedWards: catelogAddress[] = response.data.data.map((ward: any) => ({
+        label: ward.WardName,
+        value: ward.WardCode,
+      }));
+      setWard(formattedWards);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProvinces();
+  }, []);
+
+  const UpdateAddress = async () => {
+    if (!labelWard) {
+      Alert.alert("Thông báo lỗi", "Chưa có thông tin phường xã.");
+    } else if (!labelDistrict) {
+      Alert.alert("Thông báo lỗi", "Chưa có thông tin quận huyện.");
+    }
+    else if (!labelProvinces) {
+      Alert.alert("Thông báo lỗi", "Chưa có thông tin tỉnh thành.");
+    } else {
+      if (maDiaChi) {
+        const AddressInfo: IAddress = {
+          maDiaChi: Number(maDiaChi),
+          soNha: street,
+          phuongXa: labelWard,
+          quanHuyen: labelDistrict,
+          tinhThanh: labelProvinces,
+          kinhDo: null,
+          viDo: null,
+        }
+
+        try {
+          await addressService.updateAddress(AddressInfo, Number(maDiaChi))
+          Alert.alert("Thông báo", "Cập nhật địa chỉ thành công.", [
+            { text: "OK", onPress: () => navigation.navigate("Main") },
+          ]);
+          
+        } catch (error) {
+          console.log(error);
+        }
       }
-    };
-
-    useEffect(() => {
-      fetchProvinces();
-    }, []);
-
-    const UpdateAddress = async () => {
-    //   const AddressInfo = {
-    //     userId: userId,
-    //     addressId: address._id,
-    //     name: name,
-    //     street: street,
-    //     Ward: lableWard,
-    //     District: lableDistrict,
-    //     city: lableProvinces,
-    //     mobileNo: phoneNumber,
-    //   }
-    //   axios.put(`${API_BASE_URL}/user/updateAddress`,AddressInfo).then((response) => {
-    //     if (response.data.status === "FAILED") {
-    //       alert(response.data.message); 
-    //       console.log(response.data.message);
-    //     } else {
-    //       Alert.alert(
-    //         '',
-    //         `Cập nhật địa chỉ mới thành công.`,
-    //         [
-    //           { text: 'OK', onPress: () => navigation.navigate("Address") },
-    //         ],
-    //         { cancelable: false }
-    //       );
-    //     }
-    //   })
-    //   .catch((error) => {
-    //     alert("error")
-    //     console.log(error)
-    //   })
-    } 
+    }
+    
+  }
   return (
-    <View style={{backgroundColor: colors.Background}}>
-      {/* <Pressable
-        style={{
-            flexDirection:'row',
-            justifyContent:'space-between',
-            height: height / 12,
-            borderBottomWidth:0.5,
-            paddingStart:10,
-            backgroundColor:'white',
-            borderColor: "#D0D0D0",
-            alignItems:'center'
-        }}
-        onPress={() => navigation.navigate('ResetAddress', {address})}
-      >
-        {lableProvinces ? (
-          <Text>{lableProvinces}, {lableDistrict}, {lableWard}</Text>
-        ) : (
-          <Text>{provinces}, {district}, {Ward}</Text>
-        )}
-        <AntDesign name="right" size={20} color="#D0D0D0" />
-      </Pressable> */}
-      <Text style={{ padding:10, fontSize:14, fontWeight:'bold',borderBottomWidth:0.5, borderColor: "#D0D0D0"}}>Tỉnh/Thành phố</Text>
+    <View style={{ backgroundColor: colors.Background, flex: 1 }}>
+
+      <Text style={styles.title}>Tỉnh/Thành phố</Text>
       <Dropdown
         style={styles.dropdown}
         placeholderStyle={styles.placeholderStyle}
@@ -192,7 +182,7 @@ const AddressScreen = () => {
           setLabelProvinces(item.label)
         }}
       />
-      <Text style={{ padding:10, fontSize:14 ,fontWeight:'bold',borderBottomWidth:0.5, borderColor: "#D0D0D0"}}>Quận/Huyện</Text>
+      <Text style={styles.title}>Quận/Huyện</Text>
       <Dropdown
         style={styles.dropdown}
         placeholderStyle={styles.placeholderStyle}
@@ -213,7 +203,7 @@ const AddressScreen = () => {
           setLabelDistrict(item.label)
         }}
       />
-      <Text style={{ padding:10,fontSize:14,fontWeight:'bold', borderBottomWidth:0.5, borderColor: "#D0D0D0"}}>Phường/Xã</Text>
+      <Text style={styles.title}>Phường/Xã</Text>
       <Dropdown
         style={styles.dropdown}
         placeholderStyle={styles.placeholderStyle}
@@ -233,58 +223,50 @@ const AddressScreen = () => {
           setLabelWard(item.label)
         }}
       />
-      <Text style={{ padding:10, fontSize:14 ,fontWeight:'bold',borderBottomWidth:0.5, borderColor: "#D0D0D0"}}>Số nhà</Text>
+      <Text style={styles.title}>Số nhà</Text>
       <TextInput
         value={street}
         onChangeText={(text) => {
           setStreet(text);
         }}
         style={{
-          height: height / 12,
-          borderBottomWidth:0.5,
-          paddingStart:10,
-          backgroundColor:'white',
+          height: 40,
+          borderBottomWidth: 0.5,
+          paddingStart: 10,
+          backgroundColor: 'white',
           borderColor: "#D0D0D0"
         }}
         autoCorrect={false}
         placeholder="Tên đường, Tòa nhà, Số nhà."
       />
-      <Pressable
-        style={{
-            height: height / 15,
-            borderBottomWidth:0.5,
-            paddingStart:10,
-            backgroundColor: labelProvinces === null || labelDistrict === null || labelWard === null|| street === null ? "lightgray": colors.blue,
-            borderColor: "#D0D0D0",
-            alignItems:'center',
-            justifyContent:'center'
-        }}
-        onPress={()=> {
-          if ( labelProvinces === null || labelDistrict === null || labelWard === null|| street === null ) {
-            Alert.alert("Điền đầy đủ thông tin");
-          } else {
-            UpdateAddress();
-          }
-        }}
+
+      <Pressable style={styles.btn_confirm}
+        onPress={() => UpdateAddress()}
       >
-        <Text style={{ color: labelProvinces === null || labelDistrict === null || labelWard === null|| street === null ? "black": "white",}}>HOÀN THÀNH</Text>
-        
+        <Text style={styles.btn_text}>Xác nhận</Text>
       </Pressable>
     </View>
+
   );
 };
 
 export default AddressScreen
 
 const styles = StyleSheet.create({
-
+  title: {
+    padding: 10, 
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    borderBottomWidth: 0.5, 
+    borderColor: "#D0D0D0"
+  },
   dropdown: {
-    height: 50,
-    backgroundColor:'white',
+    height: 40,
+    backgroundColor: 'white',
     borderBottomColor: 'gray',
     borderBottomWidth: 0.5,
-    paddingLeft:10,
-    paddingRight:10,
+    paddingLeft: 10,
+    paddingRight: 10,
   },
   icon: {
     marginRight: 5,
@@ -294,6 +276,7 @@ const styles = StyleSheet.create({
   },
   selectedTextStyle: {
     fontSize: 14,
+    
   },
   iconStyle: {
     width: 20,
@@ -302,12 +285,13 @@ const styles = StyleSheet.create({
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+    color: '#fff',
   },
   btn_confirm: {
     backgroundColor: colors.blue,
     padding: 15,
     borderRadius: 10,
-    marginTop: 20,
+    margin: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 30,

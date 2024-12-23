@@ -130,11 +130,15 @@ import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import { AppProvider } from './src/context/ContextProviders';
 import Map from './src/screens/MapScreen';
+import { ModalPortal } from "react-native-modals";
+
 function App(): React.JSX.Element {
   return (
       <>
         <AppProvider>
           <StackNavigation />
+          <ModalPortal />
+
         </AppProvider>
       </>
     );

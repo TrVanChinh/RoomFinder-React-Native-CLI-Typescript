@@ -25,7 +25,15 @@ import { HomeScreen,
          UserInfoScreen,
          AddressScreen,
          CreateRoomScreen,
-         AddMediaScreen
+         AddMediaScreen,
+         AddressRoomScreen,
+         DetailScreen,
+         ListRoomScreen,
+         UpdateRoomScreen,
+         GeneralInforScreen,
+         MediaScreen,
+         DepositFeeScreen,
+         UpdatePasswordScreen,
       } from '../screens/index'
 import { RootStackParamList } from './RootStackParamList';
 import { RootTabParamList } from './RootTabParamList ';
@@ -163,7 +171,15 @@ const StackNavigation = () => {
         <Stack.Screen name="UserInfo" component={UserInfoScreen} options={{headerTitle:'Thông tin tài khoản'}}/>
         <Stack.Screen name="Address" component={AddressScreen} options={{headerTitle:'Địa chỉ '}}/>
         <Stack.Screen name="CreateRoom" component={CreateRoomScreen} options={{headerTitle:'Tạo thông tin phòng '}}/>
+        <Stack.Screen name="ListRoom" component={ListRoomScreen} options={{headerTitle:"Danh sách phòng"}}/>
+        <Stack.Screen name="UpdateRoom" component={UpdateRoomScreen} options={{headerTitle:"Cập nhật phòng"}}/>
         <Stack.Screen name="AddMedia" component={AddMediaScreen} options={{headerTitle:'Bước 2'}}/>
+        <Stack.Screen name="Detail" component={DetailScreen} options={{headerShown:false}}/>
+        <Stack.Screen name="GeneralInfor" component={GeneralInforScreen} options={{headerTitle:"Thông tin chung"}}/>
+        <Stack.Screen name="AddressRoom" component={AddressRoomScreen} options={{headerTitle:'Địa chỉ phòng'}}/>
+        <Stack.Screen name="Media" component={MediaScreen} options={{headerTitle:"Hình ảnh và video"}}/>
+        <Stack.Screen name="DepositFee" component={DepositFeeScreen} options={{headerTitle:"Phí đặt cọc"}}/>
+        <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} options={{headerTitle:"Cập nhật mật khẩu"}}/>
 
       </Stack.Navigator>
     </NavigationContainer>
